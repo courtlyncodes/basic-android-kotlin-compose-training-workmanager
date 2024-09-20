@@ -39,6 +39,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -75,9 +77,11 @@ fun BluromaticScreen(blurViewModel: BlurViewModel = viewModel(factory = BlurView
             .fillMaxSize()
             .statusBarsPadding()
             .padding(
-                start = WindowInsets.safeDrawing.asPaddingValues()
+                start = WindowInsets.safeDrawing
+                    .asPaddingValues()
                     .calculateStartPadding(layoutDirection),
-                end = WindowInsets.safeDrawing.asPaddingValues()
+                end = WindowInsets.safeDrawing
+                    .asPaddingValues()
                     .calculateEndPadding(layoutDirection)
             )
     ) {
@@ -140,75 +144,88 @@ private fun BlurActions(
         modifier = modifier,
         horizontalArrangement = Arrangement.Center
     ) {
-        Button(
-            onClick = onStartClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.start))
-        }
-    }
-}
+        when (blurUiState) {
+            is BlurUiState.Default -> {
+                Button(
+                    onClick = { onStartClick() },
+                    modifier = Modifier.padding(dimensionResource(R.dimen.padding_small))
+                ) {
+                    Text(stringResource(R.string.start))
+                }
+            }
 
-@Composable
-private fun BlurAmountContent(
-    selectedValue: Int,
-    blurAmounts: List<BlurAmount>,
-    modifier: Modifier = Modifier,
-    onSelectedValueChange: (Int) -> Unit
-) {
-    Column(
-        modifier = modifier.selectableGroup()
-    ) {
-        Text(
-            text = stringResource(R.string.blur_title),
-            style = MaterialTheme.typography.headlineSmall
-        )
-        blurAmounts.forEach { amount ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(
-                        role = Role.RadioButton,
-                        selected = (selectedValue == amount.blurAmount),
-                        onClick = { onSelectedValueChange(amount.blurAmount) }
-                    )
-                    .size(48.dp)
-            ) {
-                RadioButton(
-                    selected = (selectedValue == amount.blurAmount),
-                    onClick = null,
-                    modifier = Modifier.size(48.dp),
-                    colors = RadioButtonDefaults.colors(
-                        selectedColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-                Text(stringResource(amount.blurAmountRes))
+            is BlurUiState.Loading -> {
+                FilledTonalButton(onCancelClick) { Text(stringResource(R.string.cancel_work)) }
+                CircularProgressIndicator(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
+            }
+
+            is BlurUiState.Complete -> {
+                Button(onStartClick) { Text(stringResource(R.string.start)) }
             }
         }
     }
 }
 
-private fun showBlurredImage(context: Context, currentUri: String) {
-    val uri = if (currentUri.isNotEmpty()) {
-        Uri.parse(currentUri)
-    } else {
-        null
+    @Composable
+    private fun BlurAmountContent(
+        selectedValue: Int,
+        blurAmounts: List<BlurAmount>,
+        modifier: Modifier = Modifier,
+        onSelectedValueChange: (Int) -> Unit
+    ) {
+        Column(
+            modifier = modifier.selectableGroup()
+        ) {
+            Text(
+                text = stringResource(R.string.blur_title),
+                style = MaterialTheme.typography.headlineSmall
+            )
+            blurAmounts.forEach { amount ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            role = Role.RadioButton,
+                            selected = (selectedValue == amount.blurAmount),
+                            onClick = { onSelectedValueChange(amount.blurAmount) }
+                        )
+                        .size(48.dp)
+                ) {
+                    RadioButton(
+                        selected = (selectedValue == amount.blurAmount),
+                        onClick = null,
+                        modifier = Modifier.size(48.dp),
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                    Text(stringResource(amount.blurAmountRes))
+                }
+            }
+        }
     }
-    val actionView = Intent(Intent.ACTION_VIEW, uri)
-    context.startActivity(actionView)
-}
 
-@Preview(showBackground = true)
-@Composable
-fun BluromaticScreenContentPreview() {
-    BluromaticTheme {
-        BluromaticScreenContent(
-            blurUiState = BlurUiState.Default,
-            blurAmountOptions = listOf(BlurAmount(R.string.blur_lv_1, 1)),
-            {},
-            {},
-            modifier = Modifier.padding(16.dp)
-        )
+    private fun showBlurredImage(context: Context, currentUri: String) {
+        val uri = if (currentUri.isNotEmpty()) {
+            Uri.parse(currentUri)
+        } else {
+            null
+        }
+        val actionView = Intent(Intent.ACTION_VIEW, uri)
+        context.startActivity(actionView)
     }
-}
+
+    @Preview(showBackground = true)
+    @Composable
+    fun BluromaticScreenContentPreview() {
+        BluromaticTheme {
+            BluromaticScreenContent(
+                blurUiState = BlurUiState.Default,
+                blurAmountOptions = listOf(BlurAmount(R.string.blur_lv_1, 1)),
+                {},
+                {},
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
