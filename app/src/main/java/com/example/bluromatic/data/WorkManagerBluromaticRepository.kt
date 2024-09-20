@@ -39,7 +39,10 @@ class WorkManagerBluromaticRepository(context: Context) : BluromaticRepository {
      * @param blurLevel The amount to blur the image
      */
     override fun applyBlur(blurLevel: Int) {
+        // Create WorkRequest to apply blur
         val blurBuilder = OneTimeWorkRequestBuilder<BlurWorker>()
+
+        // Start the work
         workManager.enqueue(blurBuilder.build())
     }
 
